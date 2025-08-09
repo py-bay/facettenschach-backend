@@ -1,27 +1,15 @@
-# app/main.py
-import os
-import uuid
-from fastapi import FastAPI, UploadFile, BackgroundTasks, Depends, HTTPException
-from sqlmodel import SQLModel, Field, create_engine, Session, select
-from typing import Optional
-from pydantic import BaseModel
+from fastapi import FastAPI
+from app.core.config import get_settings
+from app.core.database import create_db_and_tables
+from app.api.v1 import category as category_router
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=(
-        {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-    ),
-)
+def create_app() -> FastAPI:
+    app = FastAPI(title="Facettenschach - Categories API")
+    app.include_router(category_router.router)
+    return app
 
-app = FastAPI(title="MVP")
-
+app = create_app()
 
 @app.on_event("startup")
 def on_startup():
-    SQLModel.metadata.create_all(engine)
-
-
-@app.get("/test")
-async def test_endpoint():
-    return {"message": "Hello, World!"}
+    create_db_and_tables()
